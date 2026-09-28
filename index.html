@@ -1,0 +1,77 @@
+<!DOCTYPE html>	
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nerava</title>
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- صفحه اسپلش -->
+<div id="splash" class="splash">
+<h1>Nerava</h1>
+</div>
+
+<!-- صفحه اصلی -->
+<div id="app" class="app hidden">
+
+<header class="header">
+<button class="back-btn">←</button>
+<span class="logo">Nerava</span>
+<button class="export-btn" onclick="exportVideo()">خروجی</button>
+</header>
+
+<div class="preview">
+<video id="videoPlayer" controls></video>
+<div id="placeholder" class="placeholder">
+<p>ویدیویی انتخاب نشده</p>
+<button onclick="selectVideo()">انتخاب ویدیو</button>
+</div>
+<div id="textOverlay" class="text-overlay"></div>
+</div>
+
+<div class="toolbar">
+<button onclick="openPanel('trim')">
+<span>✂️</span>
+<small>برش</small>
+</button>
+<button onclick="openPanel('text')">
+<span>T</span>
+<small>متن</small>
+</button>
+<button onclick="openPanel('effect')">
+<span>✨</span>
+<small>افکت</small>
+</button>
+<button onclick="openPanel('music')">
+<span>🎵</span>
+<small>موزیک</small>
+</button>
+<button onclick="openPanel('template')">
+<span>📐</span>
+<small>قالب</small>
+</button>
+<button onclick="openPanel('subtitle')">
+<span>💬</span>
+<small>زیرنویس</small>
+</button>
+</div>
+
+<div id="panel" class="panel hidden">
+<div class="panel-header">
+<h3 id="panelTitle">عنوان</h3>
+<button onclick="closePanel()">✕</button>
+</div>
+<div id="panelContent" class="panel-content"></div>
+</div>
+
+</div>
+
+<input type="file" id="videoInput" accept="video/*" hidden>
+<input type="file" id="musicInput" accept="audio/*" hidden>
+
+<script src="script.js"></script>
+</body>
+</html>
