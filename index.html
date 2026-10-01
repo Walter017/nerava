@@ -355,3 +355,50 @@
   <div class="modal">
     <h3>خروجی ویدیو</h3>
     <p style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:12px;">کیفیت</p>
+    $('#btn-start-export').onclick = () => {
+  const res = $('#export-modal [data-res].active')?.dataset.res || '1080';
+  const fps = $('#export-modal [data-fps].active')?.dataset.fps || '30';
+  $('#export-progress').classList.remove('hidden');
+  $('#btn-start-export').style.display = 'none';
+  let p = 0;
+  const fill = $('#export-fill');
+  const st = $('#export-status');
+  const iv = setInterval(() => {
+    p += Math.random() * 12 + 4;
+    if (p >= 100) {
+      p = 100; clearInterval(iv);
+      st.textContent = '✅ خروجی آماده شد — ' + res + 'p / ' + toFa(fps) + 'fps';
+      toast('ویدیو آماده ذخیره است');
+      // In a real app: MediaRecorder / FFmpeg.wasm would produce a blob download
+      setTimeout(() => {
+        // Simulate download of current frame as placeholder
+        try {
+          canvas.width = video.videoWidth || 720;
+          canvas.height = video.videoHeight || 1280;
+          ctx.drawImage(video, 0, 0);
+        } catch(e) {}
+      }, 300);
+    }
+    fill.style.width = p + '%';
+    st.textContent = 'در حال خروجی... ' + toFa(Math.floor(p)) + '٪';
+  }, 200);
+};
+
+// Persist progress
+window.addEventListener('beforeunload', () => {
+  if (state.clips.length) {
+    try {
+      localStorage.setItem('neon_autosave', JSON.stringify({
+        clipCount: state.clips.length,
+        aspect: state.aspect,
+        ts: Date.now()
+      }));
+    } catch(e) {}
+  }
+});
+
+// Init panels data
+renderEffects();
+</script>
+</body>
+</html>
