@@ -1,77 +1,357 @@
-<!DOCTYPE html>	
-<html lang="fa" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nerava</title>
-<link rel="stylesheet" href="style.css">
-<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600&display=swap" rel="stylesheet">
+/* Speed options */
+.speed-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.speed-btn {
+  padding: 12px 16px; border-radius: 12px; background: var(--bg3);
+  font-size: 14px; font-weight: 600; min-width: 60px; min-height: 48px;
+  border: 2px solid transparent;
+}
+.speed-btn.active { border-color: var(--neon); color: var(--neon); }
+
+/* Subtitle styles */
+.sub-style-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.sub-style {
+  padding: 16px 8px; border-radius: 12px; background: var(--bg3);
+  text-align: center; font-size: 13px; font-weight: 600; min-height: 60px;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid transparent;
+}
+.sub-style.active { border-color: var(--neon); }
+
+/* Layer item */
+.layer-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px; background: var(--bg3); border-radius: 10px; margin-bottom: 8px;
+}
+.layer-item span { flex: 1; font-size: 13px; }
+
+/* Safe area bottom spacer */
+.safe-spacer { height: var(--safe-b); }
+
+/* Responsive */
+@media (min-width: 768px) {
+  .preview-wrap { max-width: 420px; margin: 0 auto; }
+  .panel { max-width: 480px; left: 50%; transform: translateX(-50%) translateY(100%); }
+  .panel.open { transform: translateX(-50%) translateY(0); }
+  .modal { max-width: 420px; }
+  .select-body { max-width: 480px; margin: 0 auto; }
+}
+</style>
 </head>
 <body>
 
-<!-- صفحه اسپلش -->
-<div id="splash" class="splash">
-<h1>Nerava</h1>
+<!-- INTRO -->
+<div id="intro">
+  <div class="intro-glow"></div>
+  <div class="intro-logo">NEON</div>
+  <div class="intro-sub">ویرایشگر ویدیوهای کوتاه</div>
 </div>
 
-<!-- صفحه اصلی -->
-<div id="app" class="app hidden">
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
 
-<header class="header">
-<button class="back-btn">←</button>
-<span class="logo">Nerava</span>
-<button class="export-btn" onclick="exportVideo()">خروجی</button>
-</header>
-
-<div class="preview">
-<video id="videoPlayer" controls></video>
-<div id="placeholder" class="placeholder">
-<p>ویدیویی انتخاب نشده</p>
-<button onclick="selectVideo()">انتخاب ویدیو</button>
-</div>
-<div id="textOverlay" class="text-overlay"></div>
-</div>
-
-<div class="toolbar">
-<button onclick="openPanel('trim')">
-<span>✂️</span>
-<small>برش</small>
-</button>
-<button onclick="openPanel('text')">
-<span>T</span>
-<small>متن</small>
-</button>
-<button onclick="openPanel('effect')">
-<span>✨</span>
-<small>افکت</small>
-</button>
-<button onclick="openPanel('music')">
-<span>🎵</span>
-<small>موزیک</small>
-</button>
-<button onclick="openPanel('template')">
-<span>📐</span>
-<small>قالب</small>
-</button>
-<button onclick="openPanel('subtitle')">
-<span>💬</span>
-<small>زیرنویس</small>
-</button>
+<!-- SELECT SCREEN -->
+<div class="screen" id="select-screen">
+  <div class="select-header">
+    <h1>NEON</h1>
+    <p>انتخاب کلیپ</p>
+  </div>
+  <div class="select-body">
+    <div class="drop-zone" id="drop-zone">
+      <div class="drop-icon">🎬</div>
+      <h3>ویدیو را انتخاب کنید</h3>
+      <p>یک یا چند کلیپ برای ساخت ریلز، تیک‌تاک یا شورتس</p>
+      <button class="btn-primary" id="btn-pick-video">انتخاب از گالری</button>
+      <input type="file" id="file-input" accept="video/*" multiple hidden>
+    </div>
+    <div class="clip-list" id="clip-list"></div>
+  </div>
+  <div class="select-footer hidden" id="select-footer">
+    <button class="btn-secondary" id="btn-add-more">+ افزودن</button>
+    <button class="btn-primary" id="btn-confirm">تأیید و ادامه</button>
+  </div>
 </div>
 
-<div id="panel" class="panel hidden">
-<div class="panel-header">
-<h3 id="panelTitle">عنوان</h3>
-<button onclick="closePanel()">✕</button>
-</div>
-<div id="panelContent" class="panel-content"></div>
+<!-- EDITOR SCREEN -->
+<div class="screen" id="editor-screen">
+  <div class="ed-top">
+    <button class="ed-top-btn" id="btn-back" title="بازگشت">→</button>
+    <span class="logo-sm">NEON</span>
+    <div class="ed-top-actions">
+      <button class="ed-top-btn" id="btn-undo" title="بازگشت">↩</button>
+      <button class="ed-top-btn" id="btn-redo" title="انجام دوباره">↪</button>
+      <button class="btn-export" id="btn-export">خروجی</button>
+    </div>
+  </div>
+
+  <div class="preview-wrap" id="preview-wrap">
+    <div class="aspect-badge" id="aspect-badge">۹:۱۶</div>
+    <div class="preview-inner" id="preview-inner">
+      <video id="preview-video" playsinline webkit-playsinline></video>
+      <canvas id="preview-canvas"></canvas>
+      <div class="preview-overlay" id="text-overlay"></div>
+    </div>
+    <div class="play-overlay" id="play-overlay">
+      <div class="play-btn-big">▶</div>
+    </div>
+  </div>
+
+  <div class="timeline-section">
+    <div class="tl-controls">
+      <span class="tl-time" id="tl-time">۰:۰۰ / ۰:۰۰</span>
+      <div class="tl-zoom">
+        <button id="tl-zoom-out">−</button>
+        <button id="tl-zoom-in">+</button>
+      </div>
+    </div>
+    <div class="timeline-scroll" id="timeline-scroll">
+      <div class="timeline-track" id="timeline-track">
+        <div class="tl-playhead" id="tl-playhead"></div>
+      </div>
+    </div>
+  </div>
+
+<div class="bottom-bar" id="bottom-bar">
+    <button class="tool-btn" data-tool="trim"><span class="t-icon">✂️</span>برش</button>
+    <button class="tool-btn" data-tool="effects"><span class="t-icon">✨</span>افکت‌ها</button>
+    <button class="tool-btn" data-tool="text"><span class="t-icon">Aa</span>متن</button>
+    <button class="tool-btn" data-tool="subtitle"><span class="t-icon">💬</span>زیرنویس</button>
+    <button class="tool-btn" data-tool="music"><span class="t-icon">🎵</span>موسیقی</button>
+    <button class="tool-btn" data-tool="more"><span class="t-icon">⋯</span>بیشتر</button>
+  </div>
 </div>
 
+<!-- PANELS -->
+<div class="panel" id="panel-trim">
+  <div class="panel-header"><h3>برش</h3><button class="panel-close" data-close>✕</button></div>
+  <div class="panel-body">
+    <div class="slider-row">
+      <label>شروع <span id="trim-start-val">۰:۰۰</span></label>
+      <input type="range" id="trim-start" min="0" max="100" value="0" step="0.1">
+    </div>
+    <div class="slider-row">
+      <label>پایان <span id="trim-end-val">۰:۰۰</span></label>
+      <input type="range" id="trim-end" min="0" max="100" value="100" step="0.1">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:12px;">
+      <button class="btn-secondary" id="btn-split">تقسیم</button>
+      <button class="btn-primary" id="btn-apply-trim">اعمال برش</button>
+    </div>
+  </div>
 </div>
 
-<input type="file" id="videoInput" accept="video/*" hidden>
-<input type="file" id="musicInput" accept="audio/*" hidden>
+<div class="panel" id="panel-effects">
+  <div class="panel-header"><h3>افکت‌ها</h3><button class="panel-close" data-close>✕</button></div>
+  <div class="panel-body">
+    <div class="grid-items" id="effects-grid"></div>
+    <div class="slider-row" style="margin-top:16px;" id="effect-intensity-wrap">
+      <label>شدت <span id="effect-intensity-val">۵۰٪</span></label>
+      <input type="range" id="effect-intensity" min="0" max="100" value="50">
+    </div>
+  </div>
+</div>
 
-<script src="script.js"></script>
-</body>
-</html>
+<div class="panel" id="panel-text">
+  <div class="panel-header"><h3>متن</h3><button class="panel-close" data-close>✕</button></div>
+  <div class="panel-body">
+    <textarea class="text-input" id="text-input" placeholder="متن خود را بنویسید..." rows="2"></textarea>
+    <div class="color-row" id="text-colors"></div>
+    <div class="slider-row">
+      <label>اندازه <span id="text-size-val">۲۴</span></label>
+      <input type="range" id="text-size" min="12" max="72" value="24">
+    </div>
+    <div class="chips" id="text-fonts">
+      <button class="chip active" data-font="Vazirmatn">وزیر</button>
+      <button class="chip" data-font="Tahoma">تاهوما</button>
+      <button class="chip" data-font="Arial">آریال</button>
+      <button class="chip" data-font="Georgia">جورجیا</button>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:12px;">
+      <button class="btn-primary" id="btn-add-text">افزودن متن</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="panel-subtitle">
+  <div class="panel-header"><h3>زیرنویس خودکار</h3><button class="panel-close" data-close>✕</button></div>
+  <div class="panel-body">
+    <div class="chips" style="margin-bottom:12px;">
+      <button class="chip active" data-lang="fa">فارسی</button>
+      <button class="chip" data-lang="en">English</button>
+    </div>
+    <button class="btn-primary" id="btn-auto-sub" style="width:100%;margin-bottom:16px;">🎤 تولید زیرنویس خودکار</button>
+    <div class="sub-style-grid" id="sub-styles">
+      <div class="sub-style active" data-style="classic">کلاسیک</div>
+      <div class="sub-style" data-style="neon">نئون</div>
+      <div class="sub-style" data-style="bold">بولد</div>
+      <div class="sub-style" data-style="outline">حاشیه‌دار</div>
+      <div class="sub-style" data-style="box">باکس</div>
+      <div class="sub-style" data-style="word">کلمه به کلمه</div>
+    </div>
+    <div class="slider-row" style="margin-top:16px;">
+      <label>اندازه <span id="sub-size-val">۲۰</span></label>
+      <input type="range" id="sub-size" min="12" max="48" value="20">
+    </div>
+    <div id="sub-list" style="margin-top:12px;"></div>
+  </div>
+</div>
+
+<div class="panel" id="panel-music">
+  <div class="panel-header"><h3>موسیقی</h3><button class="panel-close" data-close>✕</button></div>
+  <div class="panel-body">
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="btn-secondary" id="btn-import-music" style="flex:1;">📁 وارد کردن</button>
+      <button class="btn-secondary" id="btn-record-audio" style="flex:1;">🎙 ضبط صدا</button>
+      <input type="file" id="music-input" accept="audio/*" hidden>
+    </div>
+    <div class="chips" id="music-cats">
+      <button class="chip active" data-cat="all">همه</button>
+      <button class="chip" data-cat="calm">آرام</button>
+      <button class="chip" data-cat="cinematic">سینمایی</button>
+      <button class="chip" data-cat="emotional">احساسی</button>
+      <button class="chip" data-cat="energetic">پرانرژی</button>
+      <button class="chip" data-cat="lofi">لو-فای</button>
+      <button class="chip" data-cat="happy">شاد</button>
+      <button class="chip" data-cat="minimal">مینیمال</button>
+    </div>
+    <div id="music-list"></div>
+    <div class="slider-row" style="margin-top:16px;" id="vol-wrap">
+      <label>صدای موسیقی <span id="music-vol-val">۸۰٪</span></label>
+      <input type="range" id="music-vol" min="0" max="100" value="80">
+      <label style="margin-top:12px;">صدای اصلی <span id="orig-vol-val">۱۰۰٪</span></label>
+      <input type="range" id="orig-vol" min="0" max="100" value="100">
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="panel-more">
+  <div class="panel-header"><h3>بیشتر</h3><button class="panel-close" data-close>✕</button></div>
+  <div class="panel-body">
+    <div class="more-cat">
+      <h4>ویدیو</h4>
+      <div class="more-grid">
+        <button class="more-item" data-action="speed"><span class="m-icon">⚡</span>سرعت</button>
+        <button class="more-item" data-action="reverse"><span class="m-icon">⏪</span>معکوس</button>
+        <button class="more-item" data-action="freeze"><span class="m-icon"> freeze</span>فریم ثابت</button>
+        <button class="more-item" data-action="crop"><span class="m-icon">⬜</span>برش تصویر</button>
+        <button class="more-item" data-action="rotate"><span class="m-icon">🔄</span>چرخش</button>
+        <button class="more-item" data-action="aspect"><span class="m-icon">📐</span>نسبت تصویر</button>
+      </div>
+    </div>
+    <div class="more-cat">
+      <h4>تصویر</h4>
+      <div class="more-grid">
+        <button class="more-item" data-action="filters"><span class="m-icon">🎨</span>فیلترها</button>
+        <button class="more-item" data-action="adjust"><span class="m-icon">☀️</span>تنظیمات تصویر</button>
+      </div>
+    </div>
+    <div class="more-cat">
+      <h4>صدا</h4>
+      <div class="more-grid">
+        <button class="more-item" data-action="record"><span class="m-icon">🎙</span>ضبط صدا</button>
+        <button class="more-item" data-action="audio-set"><span class="m-icon">🔊</span>تنظیم صدا</button>
+      </div>
+    </div>
+    <div class="more-cat">
+      <h4>عناصر</h4>
+      <div class="more-grid">
+        <button class="more-item" data-action="layers"><span class="m-icon">📚</span>لایه</button>
+        <button class="more-item" data-action="stickers"><span class="m-icon">😊</span>استیکر</button>
+        <button class="more-item" data-action="gifs"><span class="m-icon">GIF</span>GIF</button>
+        <button class="more-item" data-action="transition"><span class="m-icon">🔀</span>انتقال</button>
+      </div>
+    </div>
+    <div class="more-cat">
+      <h4>حرفه‌ای</h4>
+      <div class="more-grid">
+        <button class="more-item" data-action="keyframe"><span class="m-icon">🔑</span>کی‌فریم</button>
+        <button class="more-item" data-action="beatsync"><span class="m-icon">💓</span>هماهنگ‌سازی با ضرب</button>
+        <button class="more-item" data-action="silence"><span class="m-icon">🔇</span>حذف سکوت</button>
+
+<button class="more-item" data-action="smartcut"><span class="m-icon">🤖</span>برش هوشمند</button>
+        <button class="more-item" data-action="bgremove"><span class="m-icon">🗑</span>حذف پس‌زمینه</button>
+        <button class="more-item" data-action="projects"><span class="m-icon">📁</span>پروژه‌ها</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sub-panels -->
+<div class="panel" id="panel-speed">
+  <div class="panel-header"><h3>سرعت</h3><button class="panel-close" data-close>✕</button></div>
+  <div class="panel-body">
+    <div class="speed-btns">
+      <button class="speed-btn" data-speed="0.25">۰.۲۵×</button>
+      <button class="speed-btn" data-speed="0.5">۰.۵×</button>
+      <button class="speed-btn" data-speed="0.75">۰.۷۵×</button>
+      <button class="speed-btn active" data-speed="1">۱×</button>
+      <button class="speed-btn" data-speed="1.5">۱.۵×</button>
+      <button class="speed-btn" data-speed="2">۲×</button>
+      <button class="speed-btn" data-speed="3">۳×</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="panel-filters">
+  <div class="panel-header"><h3>فیلترها</h3><button class="panel-close" data-close>✕</button></div>
+  <div class="panel-body">
+    <div class="chips" id="filter-cats">
+      <button class="chip active" data-fcat="all">همه</button>
+      <button class="chip" data-fcat="cinematic">سینمایی</button>
+      <button class="chip" data-fcat="warm">گرم</button>
+      <button class="chip" data-fcat="cool">سرد</button>
+      <button class="chip" data-fcat="vintage">قدیمی</button>
+      <button class="chip" data-fcat="minimal">مینیمال</button>
+      <button class="chip" data-fcat="natural">طبیعی</button>
+      <button class="chip" data-fcat="energetic">پرانرژی</button>
+    </div>
+    <div class="grid-items" id="filters-grid"></div>
+    <div class="slider-row" style="margin-top:16px;">
+      <label>شدت <span id="filter-intensity-val">۱۰۰٪</span></label>
+      <input type="range" id="filter-intensity" min="0" max="100" value="100">
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="panel-adjust">
+  <div class="panel-header"><h3>تنظیمات تصویر</h3><button class="panel-close" data-close>✕</button></div>
+  <div class="panel-body" id="adjust-sliders"></div>
+</div>
+
+<div class="panel" id="panel-aspect">
+  <div class="panel-header"><h3>نسبت تصویر</h3><button class="panel-close" data-close>✕</button></div>
+  <div class="panel-body">
+    <div class="option-row" style="flex-direction:column;">
+      <button class="opt-btn active" data-aspect="9:16" style="width:100%;">۹:۱۶ — ریلز، استوری، تیک‌تاک و شورتس</button>
+      <button class="opt-btn" data-aspect="1:1" style="width:100%;">۱:۱ — مربع</button>
+      <button class="opt-btn" data-aspect="16:9" style="width:100%;">۱۶:۹ — افقی</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="panel-stickers">
+  <div class="panel-header"><h3>استیکر</h3><button class="panel-close" data-close>✕</button></div>
+  <div class="panel-body">
+    <div class="grid-items" id="stickers-grid" style="grid-template-columns:repeat(5,1fr);"></div>
+  </div>
+</div>
+
+<div class="panel" id="panel-transition">
+  <div class="panel-header"><h3>انتقال</h3><button class="panel-close" data-close>✕</button></div>
+  <div class="panel-body">
+    <div class="grid-items" id="transitions-grid"></div>
+  </div>
+</div>
+
+<div class="panel" id="panel-projects">
+  <div class="panel-header"><h3>پروژه‌ها</h3><button class="panel-close" data-close>✕</button></div>
+  <div class="panel-body">
+    <button class="btn-primary" id="btn-save-project" style="width:100%;margin-bottom:16px;">💾 ذخیره پروژه</button>
+    <div id="projects-list"></div>
+  </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal-overlay" id="export-modal">
+  <div class="modal">
+    <h3>خروجی ویدیو</h3>
+    <p style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:12px;">کیفیت</p>
